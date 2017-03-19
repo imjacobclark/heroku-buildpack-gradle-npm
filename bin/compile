@@ -11,12 +11,31 @@ LIB_DIR=$BP_DIR/lib
 . $LIB_DIR/common.sh
 . $LIB_DIR/failures.sh
 
-# parse args
+### Parse args
 BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
+BP_DIR=$(cd $(dirname ${0:-}); cd ..; pwd)
+
+### Load dependencies
+
+source $BP_DIR/lib/json.sh
+source $BP_DIR/lib/binaries.sh
 
 export_env_dir $ENV_DIR
+
+install_node() {
+  local node_engine=$(read_json "$BUILD_DIR/package.json" ".engines.node")
+  local npm_engine=$(read_json "$BUILD_DIR/package.json" ".engines.npm")
+
+  echo "engines.node (package.json):  ${node_engine:-unspecified}"
+  echo "engines.npm (package.json):   ${npm_engine:-unspecified (use default)}"
+
+  install_nodejs "$node_engine" "$BUILD_DIR/.heroku/node"
+  install_npm "$npm_engine" "$BUILD_DIR/.heroku/node"
+}
+
+install_node | output "$LOG_FILE"
 
 if has_stage_task $BUILD_DIR; then
   DEFAULT_GRADLE_TASK="stage"
